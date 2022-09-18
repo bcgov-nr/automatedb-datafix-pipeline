@@ -9,5 +9,5 @@ podman run --rm \
   -v /tmp/$TMP_VOLUME:/$PODMAN_WORKDIR \
   --workdir $PODMAN_WORKDIR \
   $PODMAN_REGISTRY/$CONTAINER_IMAGE_LIQUBASE \
-  --defaultsFile=liquibase.properties --changeset-identifier changelog.xml::1::author update
+  --defaultsFile=liquibase.properties --changeset-identifier "changelog.xml::9::Andreas Wilson" update
 EOF
