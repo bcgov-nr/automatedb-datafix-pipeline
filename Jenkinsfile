@@ -4,6 +4,7 @@ pipeline {
     }
     environment {
         VAULT_ADDR = "https://vault-iit.apps.silver.devops.gov.bc.ca"
+        BROKER_URL = "https://nr-broker.apps.silver.devops.gov.bc.ca"
         FLUENTBIT_DEPLOYER_TOKEN = credentials('fluentbit-deployer')
         VAULT_TOKEN = """${sh(
                 returnStdout: true,
