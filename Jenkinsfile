@@ -128,13 +128,31 @@ pipeline {
         stage('Run Liquibase dry run') {
             when { expression { return params.dryRun == true } }
             steps {
-                sh 'scripts/update-dry-run.sh'
+                script {
+                    def rc = sh(
+                        returnStatus: true,
+                        script: "scripts/datafix_select.sh"
+                    )
+                    if (rc != 0) {
+                        currentBuild.result = 'ABORTED'
+                        error('Error occured. Stop execution.')
+                    }
+                }
             }
         }
         stage('Run Liquibase') {
             when { expression { return params.dryRun == false } }
             steps {
-                sh 'scripts/update.sh'
+                script {
+                    def rc = sh(
+                        returnStatus: true,
+                        script: "scripts/update.sh"
+                    )
+                    if (rc != 0) {
+                        currentBuild.result = 'ABORTED'
+                        error('Error occured. Stop execution.')
+                    }
+                }
             }
         }
         stage('Test') {

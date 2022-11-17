@@ -10,4 +10,13 @@ podman run --rm \
   --workdir $PODMAN_WORKDIR \
   $PODMAN_REGISTRY/$CONTAINER_IMAGE_LIQUBASE \
   --defaultsFile=liquibase.properties update
+
+UPDATE_RC=\$?
+
+# Two exits are required because we are running as another user
+if [ \$UPDATE_RC -ne 0 ]; then
+  echo "${BUILD_URL}" | mailx -s "Error during Liquibase update" NRIDS.ApplicationDelivery@gov.bc.ca
+  exit \$UPDATE_RC
+  exit \$UPDATE_RC
+fi
 EOF

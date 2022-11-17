@@ -12,3 +12,14 @@ podman run --rm \
   $PODMAN_REGISTRY/$CONTAINER_IMAGE_LIQUBASE \
   --defaultsFile=liquibase.properties --sql-file=scripts/datafix_select.sh execute-sql
 EOF
+
+DATAFIX_RC=\$?
+
+# Two exits are required because we are running as another user
+# Only send email for prod
+if [ \$DATAFIX_RC -ne 0 ]; then
+  echo "${BUILD_URL}" | mailx -s "Error during Liquibase datafix select" NRIDS.ApplicationDelivery@gov.bc.ca
+  exit \$DATAFIX_RC
+  exit \$DATAFIX_RC
+fi
+EOF
