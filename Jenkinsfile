@@ -5,13 +5,6 @@ pipeline {
     environment {
         VAULT_ADDR = "https://vault-iit.apps.silver.devops.gov.bc.ca"
         BROKER_URL = "https://nr-broker.apps.silver.devops.gov.bc.ca"
-        FLUENTBIT_DEPLOYER_TOKEN = credentials('fluentbit-deployer')
-        VAULT_TOKEN = """${sh(
-                returnStdout: true,
-                script: "set +x; VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$FLUENTBIT_DEPLOYER_TOKEN /sw_ux/bin/vault token create \
-                    -ttl=60 -explicit-max-ttl=60 -renewable=false -field=token -policy=system/isss-cdua-read -policy=system/isss-ci-read"
-            )}"""
-        APP_VAULT_TOKEN = "${params.wrappingToken}"
         TARGET_ENV = "production"
         GIT_REPO = "${params.gitRepo}"
         GIT_BRANCH = "${params.gitBranch}"
@@ -19,6 +12,7 @@ pipeline {
         TAG_VERSION = "v${SEM_VERSION}"
         PROJECT_KEY = "${params.project}"
         DB_COMPONENT = "${params.component}"
+        SCHEDULED_DATAFIX_USER_ID = "${params.scheduledDatafixUserId}"
         BITBUCKET_BASEURL = "bwa.nrs.gov.bc.ca/int/stash"
         PODMAN_WORKDIR = "/liquibase/changelog"
         TMP_VOLUME = "liquibase.${UUID.randomUUID().toString()[0..7]}"
@@ -122,12 +116,6 @@ pipeline {
         stage('Run Liquibase datafix select') {
             when { expression { return params.datafix == true } }
             steps {
-                sh 'scripts/datafix_select.sh'
-            }
-        }
-        stage('Run Liquibase dry run') {
-            when { expression { return params.dryRun == true } }
-            steps {
                 script {
                     def rc = sh(
                         returnStatus: true,
@@ -138,6 +126,12 @@ pipeline {
                         error('Error occured. Stop execution.')
                     }
                 }
+            }
+        }
+        stage('Run Liquibase dry run') {
+            when { expression { return params.dryRun == true } }
+            steps {
+                sh 'scripts/update-dry-run.sh'
             }
         }
         stage('Run Liquibase') {
@@ -163,6 +157,15 @@ pipeline {
         }
     }
     post {
+        success {
+            sh "set +x; scripts/broker_intention_close.sh 'success'"
+        }
+        unstable {
+            sh "set +x; scripts/broker_intention_close.sh 'failure'"
+        }
+        failure {
+            sh "set +x; scripts/broker_intention_close.sh 'failure'"
+        }
         always {
             // clean up server temp directory
             sh "scripts/cleanup.sh"
@@ -185,6 +188,10 @@ pipeline {
 
 def getCauseUserId() {
     final hudson.model.Cause$UpstreamCause upstreamCause = currentBuild.rawBuild.getCause(hudson.model.Cause$UpstreamCause);
+    if (upstreamCause.getUpstreamRun().getCause(hudson.triggers.TimerTrigger$TimerTriggerCause)) {
+        println "Scheduled Data Fix User ID: ${SCHEDULED_DATAFIX_USER_ID}"
+        return "${SCHEDULED_DATAFIX_USER_ID}"
+    }
     final hudson.model.Cause$UserIdCause userIdCause = upstreamCause == null ?
         currentBuild.rawBuild.getCause(hudson.model.Cause$UserIdCause) :
         upstreamCause.getUpstreamRun().getCause(hudson.model.Cause$UserIdCause);
