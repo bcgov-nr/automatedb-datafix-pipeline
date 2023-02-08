@@ -9,14 +9,23 @@ podman run --rm \
   -v /tmp/$TMP_VOLUME:/$PODMAN_WORKDIR \
   --workdir $PODMAN_WORKDIR \
   $PODMAN_REGISTRY/$CONTAINER_IMAGE_LIQUBASE \
-  --defaultsFile=liquibase.properties update
+  --defaultsFile=liquibase.properties update 2> "/tmp/${TMP_OUTPUT_FILE}"
 
 UPDATE_RC=\$?
 
 # Two exits are required because we are running as another user
 if [ \$UPDATE_RC -ne 0 ]; then
-  echo "${BUILD_URL}" | mailx -s "Error during Liquibase update" NRIDS.ApplicationDelivery@gov.bc.ca
+  if [ "$TARGET_ENV" = "production" ]; then
+    echo "${BUILD_URL}" | mailx -s "Error during update" "${NOTIFICATION_RECIPIENTS}"
+  fi
   exit \$UPDATE_RC
   exit \$UPDATE_RC
+fi
+
+# Extract message and send notification
+ONFAIL_WARNING_COUNT="\$(grep '${ONFAIL_GREP_PATTERN}' /tmp/${TMP_OUTPUT_FILE} | wc -l)"
+if [ \$ONFAIL_WARNING_COUNT -gt 0 ] && [ "$TARGET_ENV" = "production" ]; then
+  ONFAIL_MESSAGE="\$(sed -n '/${ONFAIL_GREP_PATTERN}/{N;p}' /tmp/${TMP_OUTPUT_FILE})"
+  printf "${BUILD_URL}\n\n\${ONFAIL_MESSAGE}" | mailx -s "Data quality issue detected" "${NOTIFICATION_RECIPIENTS}"
 fi
 EOF
