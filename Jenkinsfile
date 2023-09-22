@@ -209,7 +209,7 @@ def getCauseUserId() {
         upstreamCause.getUpstreamRun().getCause(hudson.model.Cause$UserIdCause);
     final String nameFromUserIdCause = userIdCause != null ? userIdCause.userId : null;
     if (nameFromUserIdCause != null) {
-        return nameFromUserIdCause + "@idir";
+        return nameFromUserIdCause + "@azureidir";
     } else {
         return 'unknown'
     }
