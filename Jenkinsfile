@@ -3,8 +3,8 @@ pipeline {
         label 'master'
     }
     environment {
-        VAULT_ADDR = "https://vault-iit.apps.silver.devops.gov.bc.ca"
-        BROKER_URL = "https://nr-broker.apps.silver.devops.gov.bc.ca"
+        VAULT_ADDR = "https://knox.io.nrs.gov.bc.ca"
+        BROKER_URL = "https://broker.io.nrs.gov.bc.ca"
         TARGET_ENV = "production"
         GIT_REPO = "${params.gitRepo}"
         GIT_BRANCH = "${params.gitBranch}"
@@ -88,7 +88,7 @@ pipeline {
                         currentBuild.result = 'ABORTED'
                         error('Tag check failed')
                     }
-                }                
+                }
             }
         }
         stage('Checkout for deployment to production') {
@@ -121,7 +121,7 @@ pipeline {
             }
         }
         stage('Run Liquibase datafix select') {
-            when { 
+            when {
                 anyOf {
                     expression { return params.datafix == true }
                     expression { return params.datacheck == true }
