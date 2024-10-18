@@ -2,6 +2,7 @@
   "event": {
     "provider": "",
     "reason": "Job triggered",
+    "transient": true,
     "url": ""
   },
   "actions": [
