@@ -13,7 +13,12 @@
       "service": {
         "name": "",
         "project": "",
-        "environment": ""
+        "environment": "",
+        "target": {
+          "name": "automatedb-pipeline",
+          "project": "automatedb",
+          "environment": "production"
+        }
       }
     }
   ],
